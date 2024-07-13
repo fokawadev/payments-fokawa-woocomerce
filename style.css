@@ -1,0 +1,77 @@
+.checkout-summary {
+    width: 100%; /* Adjust as needed */
+    font-family: Arial, sans-serif;
+    border: 1px solid #ddd;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.coupon-section {
+    margin-bottom: 16px;
+}
+
+.coupon-section label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.coupon-section select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.subtotal-section,
+.shipping-section,
+.total-section {
+    margin-bottom: 16px;
+}
+
+.subtotal-section p,
+.shipping-section p,
+.total-section p {
+    display: inline-block;
+    margin: 0;
+    font-weight: bold;
+}
+
+.subtotal-section .amount,
+.shipping-section .amount,
+.total-section .amount {
+    float: right;
+}
+
+.shipping-section .shipping-details,
+.shipping-section .shipping-location {
+    margin: 4px 0 0 0;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.total-section .amount {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+
+#crypto_icon{
+    display:none;
+    margin-right:4px;
+    width:24px;
+    height:24px;
+}
+
+
+#crypto_name{
+    margin-bottom:4px;
+}
+
+
+
+
+
+
+
+
+
