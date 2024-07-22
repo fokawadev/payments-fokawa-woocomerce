@@ -145,7 +145,7 @@ class FokawaPay_Gateway extends WC_Payment_Gateway {
             ), 
         );
     }
-
+    
     public function payment_fields() {
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
@@ -170,22 +170,30 @@ class FokawaPay_Gateway extends WC_Payment_Gateway {
 	';
 	 
         	
-        	$crypto = [
-                        ['icon' => 'icon.png', 'text' => 'FOKAWA (FKWT)', 'value' => 'FKWT1799'],
-                        ['icon' => 'usdt.png', 'text' => 'Tether (USDT)', 'value' => 'USDT'],
-                        ['icon' => 'bnb.png', 'text' => 'Binance Coin (BNB)', 'value' => 'BNB'],
-                        ['icon' => 'ethereum.png', 'text' => 'ETHEREUM (ETH)', 'value' => 'ETH'],
-                        ['icon' => 'bitcoin.png', 'text' => 'BITCOIN (BTC)', 'value' => 'BTC'],
-                        ['icon' => 'solana.png', 'text' => 'SOLANA (SOL)', 'value' => 'SOL'],
-                        ['icon' => 'xrp.png', 'text' => 'Ripple (XRP)', 'value' => 'XRP'],
-                        ['icon' => 'tron.png', 'text' => 'TRON (TRX)', 'value' => 'TRX'],
-                        ['icon' => 'ton.png', 'text' => 'The Open Network (TON)', 'value' => 'TON']
-                    ];
-
+        // 	$crypto = [
+        //                 ['icon' => 'icon.png', 'text' => 'Fokawa (FKWT)', 'value' => 'FKWT1799'],
+        //                 ['icon' => 'usdt.png', 'text' => 'Tether (USDT)', 'value' => 'USDT'],
+        //                 ['icon' => 'bnb.png', 'text' => 'Binance Coin (BNB)', 'value' => 'BNB'],
+        //                 ['icon' => 'ethereum.png', 'text' => 'Ethereum (ETH)', 'value' => 'ETH'],
+        //                 ['icon' => 'bitcoin.png', 'text' => 'Bitcoin (BTC)', 'value' => 'BTC'],
+        //                 ['icon' => 'solana.png', 'text' => 'Solana (SOL)', 'value' => 'SOL'],
+        //                 ['icon' => 'xrp.png', 'text' => 'Ripple (XRP)', 'value' => 'XRP'],
+        //                 ['icon' => 'tron.png', 'text' => 'Tron (TRX)', 'value' => 'TRX'],
+        //                 // ['icon' => 'ton.png', 'text' => 'The Open Network (TON)', 'value' => 'TON']
+        //             ];
+        
+        	$crypto = $this->get_accepted_crypto_from_payments();
+        // 	var_dump($crypto);
+// {
+//     "id": "bitcoin",
+//     "symbol": "btc",
+//     "name": "Bitcoin",
+//     "image": "https://assets.coingecko.com/coins/images/1/large/bitcoin.png"
+//   }
         	$html = "";
         	$option = "";
         	foreach ($crypto as $key => $value) { 
-        		$option .='<option value="'.$value['value'].'" data-image="'.plugins_url('/icons/'.$value['icon'], __FILE__ ) . '">'.$value['text'].' </option>';
+        		$option .='<option value="'. $value['id'] .'" data-image="' . $value['image']  . '">'.$value['name']  . ' ('.strtoupper($value['symbol']).')</option>';
         	}
 	
 	echo '
@@ -199,8 +207,8 @@ class FokawaPay_Gateway extends WC_Payment_Gateway {
                             </select>
                         </div>
                         <div class="subtotal-section">
-                            <p>PHP Amount</p>
-                            <span class="amount" id="php_amount">₱'.WC()->cart->total.'</span>
+                            <p>Amount</p>
+                            <span class="amount" id="php_amount">'.WC()->cart->total.' '.get_woocommerce_currency().'</span>
                         </div>
                         <div class="shipping-section">
                             <p>Selected coin</p>
@@ -226,51 +234,43 @@ class FokawaPay_Gateway extends WC_Payment_Gateway {
   jQuery(document).ready(function($){
      
      const icondir ='<?php echo plugin_dir_url(__FILE__)."/icons/";?>';
-      const crypto = [ 
-            { icon: 'icon.png', text: 'FOKAWA (FKWT)', value: 'FKWT1799' },
-            { icon: 'usdt.png', text: 'Tether (USDT)', value: 'USDT' },
-            { icon: 'bnb.png', text: 'Binance Coin (BNB)', value: 'BNB' },
-            { icon: 'ethereum.png', text: 'ETHEREUM (ETH)', value: 'ETH' },
-            { icon: 'bitcoin.png', text: 'BITCOIN (BTC)', value: 'BTC' },
-            { icon: 'solana.png', text: 'SOLANA (SOL)', value: 'SOL' },
-            { icon: 'xrp.png', text: 'Ripple (XRP)', value: 'XRP' },
-            { icon: 'tron.png', text: 'TRON (TRX)', value: 'TRX' },
-            { icon: 'ton.png', text: 'The Open Network (TON)', value: 'TON' }
-        ];
+     
+     const currency = '<?php echo get_woocommerce_currency();?>';
+      const crypto = JSON.parse('<?php echo json_encode($crypto);?>');
+    //   console.log( crypto)
      
     const cart_total    = '<?php echo WC()->cart->total;?>';
-    const handleSelectChange = (event) => {
-        
-       
-        
-        
+    const handleSelectChange = (event) => { 
         const selectedValue = $(event.target).val();
         if (!selectedValue) return;  // Ensure the event is triggered only by coin selection
-
+    
+        // console.log(selectedValue )
+    
         localStorage.setItem('selectedCrypto', selectedValue);
-        const selectedCrypto = crypto.find(item => item.value === selectedValue);
-
+        const selectedCrypto = crypto.find(item => item.id === selectedValue);
+        // console.log( selectedCrypto.image );
         if (selectedCrypto) {
             $('#crypto_icon').hide();
             $('#crypto_name').text("processing...");
             $('#crypto_amount').text("processing...");
-
+            
             $.ajax({
-                url: `https://payments.fokawa.com/apiv2/rate/?phpamount=${ cart_total}&coin=${selectedValue}`,
+                url: `https://payments.fokawa.com/apiv2/rate/?amount=${cart_total}&currency=${currency}&coin=${selectedCrypto.id}`,
                 method: 'GET',
                 dataType: 'json',
                 success: function(data) {
+                    // console.log( data )
                     const j = data;
-                    const c = selectedValue === 'FKWT1799' ? 'FKWT' : selectedValue;
+                    const c =  selectedCrypto.symbol.toUpperCase();
                     const scientificNumber = parseFloat(j.conversion);
-                    const dnum = ["USDT", "FKWT1799", "XRP"].includes(selectedValue) ? 2 : 8;
-                    const decimalNumber = scientificNumber.toFixed(dnum);
-
+                    
+                    const decimalNumber = scientificNumber.toFixed(selectedCrypto.precision);
+                    
                     if (data && j.conversion) {
                         $('#crypto_icon').show();
-                        $('#crypto_icon').attr('src', icondir + selectedCrypto.icon);
+                        $('#crypto_icon').attr('src',  selectedCrypto.image);
                         $('#crypto_amount').text(`${decimalNumber} ${c}`);
-                        $('#crypto_name').text(selectedCrypto.text);
+                        $('#crypto_name').text(selectedCrypto.name);
  
                     }
                 },
@@ -387,7 +387,7 @@ function get_payment_link( $order, $order_id ){
      
     $SECRET_KEY     = $options['api_secret'];
     $merchant_id    = $options['api_key'];  
-    $api_url        = 'https://payments.fokawa.com/apiv2/';
+    $api_url        = 'https://payments.fokawa.com/apiv2/payment/';
     
     // Function to generate the signature
     function generate_signature($merchant_id, $json_payload, $secret) {
@@ -404,18 +404,21 @@ function get_payment_link( $order, $order_id ){
         $phpamount      = WC()->cart->total;//$_SESSION['phpamount'];
     }
     
+    $currency_code = get_woocommerce_currency();
     
     $callback_url = home_url('/wp-json/fokawapay/v1/callback');
     $order_details_url = $order->get_view_order_url();
-
+    $buyer_email = $order->get_billing_email();
     $data = [
                 'order_id'          => $order_id,// "FKWSTORE".rand(10000,90000),
                 'amount'            => $phpamount, 
+                'currency_code'     => $currency_code,
                 'merchant_id'       => $merchant_id,
                 'return_url'        => $order_details_url,//$url.'/payments/paid.php',
                 'notification_url'  => $callback_url,
                 'payCoinSymbol'     => $coin,
-                'date_created'      => date('Y-m-d H:i:s')
+                'date_created'      => date('Y-m-d H:i:s'),
+                'email'             => $buyer_email
     ];
     
     // Create a JSON payload string without the signature
@@ -465,6 +468,43 @@ function get_payment_link( $order, $order_id ){
     // Close the cURL session
     curl_close($ch);
 }
+
+
+
+    function get_accepted_crypto_from_payments(){ 
+            // URL of the API endpoint
+            $url = "https://payments.fokawa.com/apiv2/coinlist/";
+            
+            // Initialize a cURL session
+            $curl = curl_init();
+            
+            // Set the options for the cURL session
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $url,           // URL to fetch
+                CURLOPT_RETURNTRANSFER => true, // Return the transfer as a string of the return value
+                CURLOPT_TIMEOUT => 30,          // Maximum number of seconds to allow cURL functions to execute
+                CURLOPT_HTTPHEADER => [
+                    "Content-Type: application/json" // Set the content type to JSON
+                ],
+            ]);
+            
+            // Execute the cURL session and store the response
+            $response = curl_exec($curl);
+            
+            // Check for errors in the cURL session
+            if (curl_errno($curl)) {
+                echo 'cURL Error: ' . curl_error($curl);
+                die( $curl );
+            } else {
+                // Decode the JSON response
+                $decoded_response = json_decode($response, true);
+                 return  $decoded_response;
+            }
+            
+            // Close the cURL session
+            curl_close($curl); 
+
+    }
      
      
 } 

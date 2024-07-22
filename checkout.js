@@ -28,68 +28,81 @@ const savedCrypto = localStorage.getItem('selectedCrypto');
         const savedCrypto = localStorage.getItem('selectedCrypto');
         if (savedCrypto) {
             const selectElement = document.getElementById('coin');
-            selectElement.value = savedCrypto;
+            selectElement.value = savedCrypto.id;
             const event = new Event('change', { bubbles: true });
             selectElement.dispatchEvent(event);
         }
     }
-
-    const crypto = [ 
-        { icon: 'icon.png', text: 'FOKAWA (FKWT)', value: 'FKWT1799' },
-        { icon: 'usdt.png', text: 'Tether (USDT)', value: 'USDT' },
-        { icon: 'bnb.png', text: 'Binance Coin (BNB)', value: 'BNB' },
-        { icon: 'ethereum.png', text: 'ETHEREUM (ETH)', value: 'ETH' },
-        { icon: 'bitcoin.png', text: 'BITCOIN (BTC)', value: 'BTC' },
-        { icon: 'solana.png', text: 'SOLANA (SOL)', value: 'SOL' },
-        { icon: 'xrp.png', text: 'Ripple (XRP)', value: 'XRP' },
-        { icon: 'tron.png', text: 'TRON (TRX)', value: 'TRX' },
-        { icon: 'ton.png', text: 'The Open Network (TON)', value: 'TON' }
-    ];
+    
+    const crypto =wc_cart_params.crypto;
+    
+    //console.log( crypto );
+    
+//     {
+//     "id": "matic-network",
+//     "symbol": "matic",
+//     "name": "Polygon",
+//     "image": "https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png",
+//     "precision": 8
+// }
+    // const crypto = [ 
+    //     { icon: 'icon.png', text: 'FOKAWA (FKWT)', value: 'FKWT1799' },
+    //     { icon: 'usdt.png', text: 'Tether (USDT)', value: 'USDT' },
+    //     { icon: 'bnb.png', text: 'Binance Coin (BNB)', value: 'BNB' },
+    //     { icon: 'ethereum.png', text: 'ETHEREUM (ETH)', value: 'ETH' },
+    //     { icon: 'bitcoin.png', text: 'BITCOIN (BTC)', value: 'BTC' },
+    //     { icon: 'solana.png', text: 'SOLANA (SOL)', value: 'SOL' },
+    //     { icon: 'xrp.png', text: 'Ripple (XRP)', value: 'XRP' },
+    //     { icon: 'tron.png', text: 'TRON (TRX)', value: 'TRX' },
+    //     { icon: 'ton.png', text: 'The Open Network (TON)', value: 'TON' }
+    // ];
     
     const options = crypto.map(item => 
-        window.wp.element.createElement('option', { value: item.value, 'data-icon': item.icon }, item.text)
+        window.wp.element.createElement('option', { value: item.id, 'data-icon': item.image }, item.name + ' (' + item.symbol.toUpperCase() + ')')
     );
 
     const handleSelectChange = (event) => {
+        
         const selectedValue = event.target.value;
         if (!selectedValue) return;  // Ensure the event is triggered only by coin selection
-
+        // console.log(selectedValue)
         localStorage.setItem('selectedCrypto', selectedValue);
-        const selectedCrypto = crypto.find(item => item.value === selectedValue);
+        const selectedCrypto = crypto.find(item => item.id === selectedValue);
 
         if (selectedCrypto) {
             document.getElementById('crypto_icon').style.display = "none";
             document.getElementById('crypto_name').textContent = "processing...";
             document.getElementById('crypto_amount').textContent = "processing..."; 
             
-            fetch(`https://payments.fokawa.com/apiv2/rate/?phpamount=${wc_cart_params.cart_total}&coin=${selectedValue}`)
+            fetch(`https://payments.fokawa.com/apiv2/rate/?amount=${wc_cart_params.cart_total}&currency=${wc_cart_params.currency}&coin=${selectedCrypto.id}`)
+            // url: `https://payments.fokawa.com/apiv2/rate/?amount=${cart_total}&currency=${currency}&coin=${selectedCrypto.id}`,
                 .then(response => response.json())
                 .then(data => {
                     const j = data;
-                    const c = selectedValue === 'FKWT1799' ? 'FKWT' : selectedValue;
+                    const c = selectedCrypto.symbol;// === 'FKWT1799' ? 'FKWT' : selectedValue;
                     const scientificNumber = parseFloat(j.conversion);
-                    const dnum = ["USDT", "FKWT1799", "XRP"].includes(selectedValue) ? 2 : 8;
-                    const decimalNumber = scientificNumber.toFixed(dnum); 
+                    // const dnum = ["USDT", "FKWT1799", "XRP"].includes(selectedValue) ? 2 : 8;
+                    const decimalNumber = scientificNumber.toFixed( selectedCrypto.precision ); 
                     
                     if (data && j.conversion) {
                         document.getElementById('crypto_icon').style.display = "inline";
-                        document.getElementById('crypto_icon').src = settings.dir + selectedCrypto.icon;
+                        document.getElementById('crypto_icon').src = selectedCrypto.image;
                         document.getElementById('crypto_amount').textContent = `${decimalNumber} ${c}`;
-                        document.getElementById('crypto_name').textContent = selectedCrypto.text; 
+                        document.getElementById('crypto_name').textContent = selectedCrypto.name; 
                         
-                        updateOrderCustomField(wc_cart_params.cart_total, selectedValue);
+                        updateOrderCustomField(wc_cart_params.cart_total, selectedCrypto.id);
                     }
                 })
                 .catch(error => console.error('Error fetching rate:', error));
         }
     };
 
-    if (!isLoaded) {
-        isLoaded = true;
-        setTimeout(() => { 
-            restore();
-        }, 300);
-    }
+    // if (!isLoaded) {
+    //     isLoaded = true;
+    //     setTimeout(() => { 
+    //         restore();
+    //     }, 300);
+    // }
     
 const Content = () => { 
 
@@ -101,8 +114,8 @@ const Content = () => {
             window.wp.element.createElement('select', { id: 'coin', onChange: handleSelectChange, name: 'coin' }, options)
         ),
         window.wp.element.createElement('div', { className: 'subtotal-section' },
-            window.wp.element.createElement('p', null, 'PHP Amount'),
-            window.wp.element.createElement('span', { className: 'amount', id: "php_amount" }, `₱${wc_cart_params.cart_total}`)
+            window.wp.element.createElement('p', null, 'Amount'),
+            window.wp.element.createElement('span', { className: 'amount', id: "php_amount" }, `${wc_cart_params.cart_total} ${wc_cart_params.currency}`)
         ),
         window.wp.element.createElement('div', { className: 'shipping-section' },
             window.wp.element.createElement('p', null, 'Selected'),

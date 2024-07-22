@@ -2,9 +2,9 @@
 /*
 Plugin Name: FokawaPay
 Description: A custom payment gateway for WooCommerce block.
-Version: 1.0.0
-Author: Dev team Sevengits
-Author URI: https://sevengits.com
+Version: 1.3.4
+Author: -------
+Author URI: --------
 License: GPL-2.0+
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
 Text Domain: fokawapay_gateway
